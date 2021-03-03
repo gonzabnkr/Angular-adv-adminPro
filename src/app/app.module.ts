@@ -13,10 +13,12 @@ import { NotpagefoundComponent } from './notpagefound/notpagefound.component';
 
 
 
+
 @NgModule({
   declarations: [
     AppComponent,
-    NotpagefoundComponent
+    NotpagefoundComponent,
+    
   ],
   imports: [
     BrowserModule,
