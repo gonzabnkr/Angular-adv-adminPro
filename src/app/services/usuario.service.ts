@@ -6,6 +6,8 @@ import { catchError, map, tap } from 'rxjs/operators'
 
 import { RegisterForm } from '../interfaces/register-form.interface';
 import { Observable, of } from 'rxjs';
+import { Usuario } from '../models/usuario.model';
+
 const baseUrl = environment.base_url;
 declare const gapi :any
 
@@ -13,12 +15,21 @@ declare const gapi :any
   providedIn: 'root'
 })
 export class UsuarioService {
-  public auth2:any
+  public auth2 : any
+  public user : Usuario;
 
   constructor(private http:HttpClient,
               private ngZone:NgZone) {
     this.googleInit();
+    
    }
+
+  get token():string{
+    return localStorage.getItem('token')||'';
+  }
+  get uid():string{
+    return this.user.uid || '';
+  }
 
   googleInit(){
    
@@ -37,23 +48,29 @@ export class UsuarioService {
     localStorage.removeItem('token')
     this.auth2.signOut().then( ()=> {
       this.ngZone.run(()=>{
-        console.log('User signed out.');
+        
       })
     });
   }
 
   validarToken():Observable<boolean>{
-    const token = localStorage.getItem('token')||'';
+    
     return this.http.get(`${baseUrl}/login/renew`,{
       headers:{
-        'x-token':token
+        'x-token':this.token
       }
     }).pipe(
-      tap((resp:any) =>{
+      map((resp:any) =>{
+        const {email,nombre,role,google,img='',uid} = resp.usuario;
+        this.user = new Usuario(nombre,email,'',role,google,img,uid);
+        this.user.imagenUrl
         localStorage.setItem('token',resp.token)
+        return true
       }),
-      map(resp=>true),
-      catchError(error=>of(false))
+      catchError(error=>{
+        console.error(error)
+        return of(false);
+      })
     )
   }
 
@@ -61,6 +78,15 @@ export class UsuarioService {
     
     return this.http.post(`${baseUrl}/usuarios`, formData)
     
+  }
+
+  ActualizarUsuario(data: {email:string, nombre:string}){
+    console.log(this.user)
+   return this.http.put(`${baseUrl}/usuarios/${this.uid}`, data,{
+    headers:{
+      'x-token':this.token
+    }
+  })
   }
 
   loginUsuario(formData:LoginForm){
@@ -77,8 +103,6 @@ export class UsuarioService {
           localStorage.setItem('token',resp.token)
         })
       )
-      
-    
   }
 
   loginGoogle( token ) {

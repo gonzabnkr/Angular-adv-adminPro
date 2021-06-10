@@ -37,11 +37,11 @@ export class LoginComponent implements OnInit{
   
 
   login(){
-    console.log(this.loginForm.value)
+    
     
     this._usuarioService.loginUsuario(this.loginForm.value)
       .subscribe(()=>{
-        console.log('LogueoCorrecto')
+        
         this.router.navigateByUrl('/')
      
       },(err)=>{
@@ -79,7 +79,7 @@ export class LoginComponent implements OnInit{
     this.auth2.attachClickHandler(element, {},
         (googleUser) => {
           var id_token = googleUser.getAuthResponse().id_token;
-          console.log(id_token)
+          
           this._usuarioService.loginGoogle(id_token).subscribe(resp=>{
             this.ngZone.run(()=>{
               this.router.navigateByUrl('/')
