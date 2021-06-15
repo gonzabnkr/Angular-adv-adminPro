@@ -2,11 +2,12 @@ import { HttpClient } from '@angular/common/http';
 import { Injectable, NgZone } from '@angular/core';
 import { environment } from 'src/environments/environment';
 import { LoginForm } from '../interfaces/login-form.interface';
-import { catchError, map, tap } from 'rxjs/operators'
+import { catchError, delay, map, tap } from 'rxjs/operators'
 
 import { RegisterForm } from '../interfaces/register-form.interface';
 import { Observable, of } from 'rxjs';
 import { Usuario } from '../models/usuario.model';
+import { CargarUsuarios } from '../interfaces/cargar-usuario.interface';
 
 const baseUrl = environment.base_url;
 declare const gapi :any
@@ -29,6 +30,13 @@ export class UsuarioService {
   }
   get uid():string{
     return this.user.uid || '';
+  }
+  get headers(){
+    return {
+      headers:{
+        'x-token':this.token
+      }
+    }
   }
 
   googleInit(){
@@ -82,11 +90,7 @@ export class UsuarioService {
 
   ActualizarUsuario(data: {email:string, nombre:string}){
     console.log(this.user)
-   return this.http.put(`${baseUrl}/usuarios/${this.uid}`, data,{
-    headers:{
-      'x-token':this.token
-    }
-  })
+   return this.http.put(`${baseUrl}/usuarios/${this.uid}`, data,this.headers)
   }
 
   loginUsuario(formData:LoginForm){
@@ -115,9 +119,33 @@ export class UsuarioService {
       )
   }
 
+  cargarUsuarios(desde: number = 0){
+    const url = `${baseUrl}/usuarios?desde=${desde}`
+    return this.http.get<CargarUsuarios>(url,this.headers)
+      .pipe(
+        map(resp=>{
+          const usuarios = resp.usuarios.map(user=>new Usuario(user.nombre,user.email,'',user.role,user.google,user.img,user.uid))
+          return {
+            total: resp.total,
+            usuarios
+          }
+        })
+      )
+  }
+  
+  eliminarUsuario(usuario : Usuario){
 
+    //http://localhost:3000/api/usuarios/604bbf1e8b17063b8c583bb6
 
+    const url = `${baseUrl}/usuarios/${usuario.uid}`
+    return this.http.delete(url,this.headers)
+  }
 
+  guardarUsuario(usuario: Usuario){
+
+    return this.http.put(`${baseUrl}/usuarios/${usuario.uid}`, usuario,this.headers)
+
+  }
 
 
 
